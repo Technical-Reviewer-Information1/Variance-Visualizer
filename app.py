@@ -208,8 +208,10 @@ if 'data' in locals() and not data.empty:
 
         fig_scatter = go.Figure()
 
+        data_indices = [i+1 for i in range(len(group_stats['data']))]
+
         fig_scatter.add_trace(go.Scatter(
-            x=list(range(1, len(group_stats['data']) + 1)),
+            x=data_indices,
             y=group_stats['data'],
             mode='markers',
             name='データ点',
@@ -246,6 +248,10 @@ if 'data' in locals() and not data.empty:
     st.header("ステップ3: 標準偏差の計算と活用")
     st.markdown("""
     標準偏差は、分散の平方根をとったもので、ばらつきの大きさを元のデータの単位で表します。
+
+    **標準偏差の重要な性質：**
+    標準偏差は、平均値を基準に上下1標準偏差の範囲に、おおよそ68%のデータが収束しているという統計的な性質があります。
+    これにより、データのばらつき具合を直感的に把握することができます。
     """)
 
     col1, col2, col3 = st.columns(3)
@@ -304,6 +310,33 @@ if 'data' in locals() and not data.empty:
     )
 
     st.plotly_chart(fig_std, use_container_width=True)
+
+    st.subheader("📈 実際のデータ含有率の確認")
+    st.markdown("各データセットで、平均値±1標準偏差の範囲に実際に含まれるデータの割合を確認してみましょう。")
+
+    coverage_cols = st.columns(len(stats))
+
+    for i, (group, group_stats) in enumerate(stats.items()):
+        with coverage_cols[i] if len(stats) > 1 else st:
+            mean = group_stats['mean']
+            std = group_stats['std_dev']
+            data = group_stats['data']
+
+            # ±1標準偏差範囲内のデータを計算
+            within_1std = np.sum((data >= mean - std) & (data <= mean + std))
+            total_data = len(data)
+            percentage = (within_1std / total_data) * 100
+
+            st.metric(
+                label=f"{group}: ±1標準偏差範囲内",
+                value=f"{within_1std}/{total_data}",
+                delta=f"{percentage:.1f}%"
+            )
+
+            range_text = f"範囲: {mean - std:.1f} ～ {mean + std:.1f}"
+            st.caption(range_text)
+
+    st.info("💡 一般的に、正規分布に従うデータでは約68%が±1標準偏差の範囲内に含まれます。")
 
     st.markdown("---")
     st.header("まとめと応用")
