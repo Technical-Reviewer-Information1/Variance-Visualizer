@@ -48,38 +48,37 @@ def calculate_statistics(data):
 
 st.header("データ入力と選択")
 
+uploaded_file = st.file_uploader(
+    "CSVファイルをアップロードしてください",
+    type=['csv'],
+    help="ファイル形式：CSV（ヘッダーに「データ名」と「値」の列が必要）"
+)
+
 use_demo = st.checkbox("デモデータを使用する")
 
 if use_demo:
     data = load_demo_data()
     st.success("デモデータを読み込みました。平均値は同じですが、ばらつきの異なる2つのテストデータです。")
-else:
-    uploaded_file = st.file_uploader(
-        "CSVファイルをアップロードしてください",
-        type=['csv'],
-        help="ファイル形式：CSV（ヘッダーに「データ名」と「値」の列が必要）"
-    )
+elif uploaded_file is not None:
+    try:
+        data = pd.read_csv(uploaded_file)
 
-    if uploaded_file is not None:
-        try:
-            data = pd.read_csv(uploaded_file)
-
-            if 'データ名' not in data.columns or '値' not in data.columns:
-                st.error("CSVファイルには「データ名」と「値」の列が必要です。")
-                st.stop()
-
-            if not pd.api.types.is_numeric_dtype(data['値']):
-                st.error("「値」列は数値である必要があります。")
-                st.stop()
-
-            st.success("ファイルを正常に読み込みました。")
-
-        except Exception as e:
-            st.error(f"ファイルの読み込み中にエラーが発生しました: {str(e)}")
+        if 'データ名' not in data.columns or '値' not in data.columns:
+            st.error("CSVファイルには「データ名」と「値」の列が必要です。")
             st.stop()
-    else:
-        st.info("CSVファイルをアップロードするか、デモデータを使用してください。")
+
+        if not pd.api.types.is_numeric_dtype(data['値']):
+            st.error("「値」列は数値である必要があります。")
+            st.stop()
+
+        st.success("ファイルを正常に読み込みました。")
+
+    except Exception as e:
+        st.error(f"ファイルの読み込み中にエラーが発生しました: {str(e)}")
         st.stop()
+else:
+    st.info("CSVファイルをアップロードするか、デモデータを使用してください。")
+    st.stop()
 
 if 'data' in locals() and not data.empty:
     stats = calculate_statistics(data)
@@ -321,15 +320,16 @@ if 'data' in locals() and not data.empty:
     else:
         st.info("2つ以上のデータセットがある場合、比較分析を表示します。")
 
-    st.subheader("🎯 学習のポイント")
-    points = """
-    1. **平均値**：データの中心を表す
-    2. **分散**：データのばらつきを表す（単位が2乗される）
-    3. **標準偏差**：分散の平方根で、元のデータと同じ単位でばらつきを表す
-    4. **視覚化の重要性**：数値だけでなく、グラフで確認することで直感的に理解できる
-    5. **実用性**：品質管理、成績評価、リスク評価など様々な分野で活用される
-    """
-    st.markdown(points)
-
 else:
     st.info("データを入力してください。")
+
+st.markdown("---")
+st.subheader("🎯 学習のポイント")
+points = """
+1. **平均値**：データの中心を表す
+2. **分散**：データのばらつきを表す（単位が2乗される）
+3. **標準偏差**：分散の平方根で、元のデータと同じ単位でばらつきを表す
+4. **視覚化の重要性**：数値だけでなく、グラフで確認することで直感的に理解できる
+5. **実用性**：品質管理、成績評価、リスク評価など様々な分野で活用される
+"""
+st.markdown(points)
