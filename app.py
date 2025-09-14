@@ -172,7 +172,7 @@ if 'data' in locals() and not data.empty:
         fig_scatter = go.Figure()
 
         fig_scatter.add_trace(go.Scatter(
-            x=range(1, len(group_stats['data']) + 1),
+            x=list(range(1, len(group_stats['data']) + 1)),
             y=group_stats['data'],
             mode='markers',
             name='データ点',
