@@ -105,35 +105,72 @@ if 'data' in locals() and not data.empty:
 
     st.subheader("📊 データの分布（ヒストグラム）")
 
-    fig = go.Figure()
     colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7']
 
-    for i, (group, group_stats) in enumerate(stats.items()):
+    # データセットが複数ある場合は、各データセット別にグラフを表示
+    if len(stats) > 1:
+        cols = st.columns(len(stats))
+
+        for i, (group, group_stats) in enumerate(stats.items()):
+            with cols[i]:
+                fig = go.Figure()
+
+                fig.add_trace(go.Histogram(
+                    x=group_stats['data'],
+                    name=group,
+                    marker_color=colors[i % len(colors)],
+                    opacity=0.8,
+                    nbinsx=8
+                ))
+
+                fig.add_vline(
+                    x=group_stats['mean'],
+                    line_dash="dash",
+                    line_color="black",
+                    line_width=2,
+                    annotation_text=f"平均: {group_stats['mean']:.1f}",
+                    annotation_position="top"
+                )
+
+                fig.update_layout(
+                    title=f"{group}の分布",
+                    xaxis_title="値",
+                    yaxis_title="頻度",
+                    height=400,
+                    showlegend=False
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+    else:
+        # データセットが1つの場合は通常のヒストグラム
+        fig = go.Figure()
+        group, group_stats = list(stats.items())[0]
+
         fig.add_trace(go.Histogram(
             x=group_stats['data'],
             name=group,
-            opacity=0.7,
-            marker_color=colors[i % len(colors)],
+            marker_color=colors[0],
+            opacity=0.8,
             nbinsx=10
         ))
 
         fig.add_vline(
             x=group_stats['mean'],
             line_dash="dash",
-            line_color=colors[i % len(colors)],
-            annotation_text=f"{group}平均値: {group_stats['mean']:.2f}",
+            line_color="black",
+            line_width=2,
+            annotation_text=f"平均値: {group_stats['mean']:.2f}",
             annotation_position="top"
         )
 
-    fig.update_layout(
-        title="データの分布と平均値",
-        xaxis_title="値",
-        yaxis_title="頻度",
-        barmode='overlay',
-        height=500
-    )
+        fig.update_layout(
+            title="データの分布と平均値",
+            xaxis_title="値",
+            yaxis_title="頻度",
+            height=500
+        )
 
-    st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("---")
     st.header("ステップ2: 分散の計算と理解")
