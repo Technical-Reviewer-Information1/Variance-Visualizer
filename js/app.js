@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  const C = window.Chart, $ = id => document.getElementById(id);
+  const C = window.Chart, T = window.Tools, $ = id => document.getElementById(id);
   const NS = 'http://www.w3.org/2000/svg';
   function el(n, a, t) { const e = document.createElementNS(NS, n); for (const k in a) if (a[k] != null) e.setAttribute(k, a[k]); if (t != null) e.textContent = t; return e; }
 
@@ -179,7 +179,181 @@
     one: [45, 47, 49, 51, 95]
   };
 
-  /* ---------- STEP5 クイズ ---------- */
+
+  /* ---------- STEP4 テストA・Bの比較 ---------- */
+  function drawAB() {
+    // 平均70・標準偏差10 と 平均70・標準偏差5 の分布を作って見せる
+    const mk = (sd, seed) => {
+      const out = [];
+      for (let i = 0; i < 40; i++) {
+        const u = ((Math.sin((i + seed) * 12.9898) * 43758.5453) % 1 + 1) % 1;
+        const v = ((Math.sin((i + seed) * 78.233) * 12345.6789) % 1 + 1) % 1;
+        const z = Math.sqrt(-2 * Math.log(u + 1e-9)) * Math.cos(2 * Math.PI * v);
+        out.push(Math.max(20, Math.min(100, Math.round(70 + z * sd))));
+      }
+      return out;
+    };
+    const A = mk(10, 3), B = mk(5, 11);
+    const edges = [40, 50, 60, 70, 80, 90, 100];
+    const cnt = arr => { const c = new Array(6).fill(0); arr.forEach(v => c[Math.max(0, Math.min(5, Math.floor((v - 40) / 10)))]++); return c; };
+    const box = $('abChart');
+    box.innerHTML = '<div class="grid c2"><div><div style="font-size:.8rem;color:var(--ink-2);margin-bottom:4px">テストA（標準偏差10点）</div><div id="abA"></div></div>' +
+                    '<div><div style="font-size:.8rem;color:var(--ink-2);margin-bottom:4px">テストB（標準偏差5点）</div><div id="abB"></div></div></div>';
+    C.hist(document.getElementById('abA'), { W: 420, H: 230, counts: cnt(A), edges, unit: '人' });
+    C.hist(document.getElementById('abB'), { W: 420, H: 230, counts: cnt(B), edges, unit: '人' });
+  }
+
+  /* ---------- STEP5 偏差値 ---------- */
+  function drawHensa() {
+    const x = +$('myScore').value, m = +$('avgScore').value, sd = Math.max(1, +$('sdScore').value);
+    $('myScoreV').textContent = x; $('avgScoreV').textContent = m; $('sdScoreV').textContent = sd;
+    const dev = x - m, z = dev / sd, h = 50 + 10 * z;
+    $('devOut').textContent = (dev >= 0 ? '+' : '') + dev;
+    $('zOut').textContent = z.toFixed(2);
+    $('hensaOut').textContent = h.toFixed(1);
+    // 正規分布としたときの上位割合
+    const p = (1 - normCdf(z)) * 100;
+    $('pctOut').textContent = p.toFixed(1);
+    const n = $('hensaNote');
+    if (Math.abs(dev) < 1e-9) {
+      n.className = 'note info';
+      n.innerHTML = 'ちょうど平均点なので偏差値は <strong>50</strong>。標準偏差がいくつでも、平均と同じ点なら偏差値は50です。';
+    } else {
+      n.className = 'note ' + (h >= 50 ? 'ok' : 'warn');
+      n.innerHTML = '平均より <strong>' + Math.abs(dev) + '点</strong>' + (dev > 0 ? '上' : '下') +
+        '。それは標準偏差 ' + sd + '点 の <strong>' + Math.abs(z).toFixed(2) + '個分</strong>にあたるので、偏差値は <strong>' +
+        h.toFixed(1) + '</strong>。<br>同じ ' + Math.abs(dev) + '点の差でも、<strong>標準偏差が小さいテストほど偏差値は大きく動きます</strong>。' +
+        'スライダーで標準偏差を変えて確かめてください。';
+    }
+    // 分布と自分の位置
+    const pts = [], step = 0.5;
+    for (let v = m - 4 * sd; v <= m + 4 * sd; v += sd / 8) {
+      pts.push([v, Math.exp(-0.5 * ((v - m) / sd) ** 2)]);
+    }
+    C.scatter($('hensaChart'), { W: 620, H: 220, points: pts, r: 2.6,
+      xMin: m - 4 * sd, xMax: m + 4 * sd, yMin: 0, yMax: 1.15,
+      colors: pts.map(q => Math.abs(q[0] - x) < sd / 8 ? '#b3261e' : 'rgba(18,58,107,.35)'),
+      xLabel: '点数（赤い位置があなたの点）', margin: { t: 14, r: 18, b: 42, l: 34 } });
+  }
+  function normCdf(z) {
+    const t = 1 / (1 + 0.2316419 * Math.abs(z));
+    const d = 0.3989423 * Math.exp(-z * z / 2);
+    let p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+    return z > 0 ? 1 - p : p;
+  }
+
+  /* ---------- STEP7 自分のデータ ---------- */
+  let grid = null, gridHeader = [];
+  function refreshCols(rows, header) {
+    gridHeader = header;
+    const nums = grid ? grid.numericColumns() : [];
+    const sel = $('colSel');
+    const prev = sel.value;
+    sel.innerHTML = header.map((h, j) =>
+      '<option value="' + j + '"' + (nums.indexOf(j) < 0 ? ' disabled' : '') + '>' + h +
+      (nums.indexOf(j) < 0 ? '（数値でない列）' : '') + '</option>').join('');
+    if (prev !== '' && sel.querySelector('option[value="' + prev + '"]:not([disabled])')) sel.value = prev;
+    else if (nums.length) sel.value = nums[0];
+    calcMine();
+  }
+  function calcMine() {
+    if (!grid) return;
+    const j = +$('colSel').value;
+    const vals = grid.column(j);
+    const n = $('myNote');
+    if (vals.length < 2) {
+      n.hidden = false; n.className = 'note ng';
+      n.textContent = '数値が2つ以上必要です。表に入力するか、ファイルを読み込んでください。';
+      ['myStats', 'myDevTable', 'myChart', 'mySquares', 'myTools'].forEach(i => $(i).innerHTML = '');
+      $('myEq').innerHTML = '';
+      return;
+    }
+    const st = stats(vals);
+    $('myStats').innerHTML =
+      '<div class="metric"><div class="k">個数 n</div><div class="v">' + st.n + '</div></div>' +
+      '<div class="metric"><div class="k">平均値</div><div class="v">' + st.mean.toFixed(3) + '</div></div>' +
+      '<div class="metric"><div class="k">分散</div><div class="v">' + st.va.toFixed(3) + '</div></div>' +
+      '<div class="metric"><div class="k">標準偏差</div><div class="v">' + st.sd.toFixed(3) + '</div></div>';
+    // 計算表
+    let sumDev = 0, sumSq = 0;
+    const body = vals.map((v, i) => {
+      const d = v - st.mean; sumDev += d; sumSq += d * d;
+      return '<tr><td>' + (i + 1) + '</td><td>' + v + '</td><td style="color:' +
+        (d >= 0 ? 'var(--accent)' : 'var(--ng)') + '">' + (d >= 0 ? '+' : '') + d.toFixed(3) +
+        '</td><td>' + (d * d).toFixed(3) + '</td></tr>';
+    }).join('');
+    $('myDevTable').innerHTML =
+      '<thead><tr><th>#</th><th>値 x</th><th>偏差 x−x̄</th><th>偏差の2乗 (x−x̄)²</th></tr></thead><tbody>' + body +
+      '</tbody><tfoot><tr><td colspan="2">合計</td><td>' + (Math.abs(sumDev) < 1e-9 ? '0.000' : sumDev.toFixed(3)) +
+      '</td><td>' + sumSq.toFixed(3) + '</td></tr></tfoot>';
+    $('myEq').innerHTML =
+      '平均値 x̄ ＝ ' + vals.reduce((a, b) => a + b, 0).toFixed(3) + ' ÷ ' + st.n + ' ＝ <strong>' + st.mean.toFixed(3) + '</strong><br>' +
+      '偏差の合計 ＝ <strong>' + (Math.abs(sumDev) < 1e-9 ? '0' : sumDev.toFixed(3)) + '</strong>（必ず0になります）<br>' +
+      '分散 ＝ 偏差の2乗の合計 ' + sumSq.toFixed(3) + ' ÷ ' + st.n + ' ＝ <strong>' + st.va.toFixed(3) + '</strong><br>' +
+      '標準偏差 ＝ √' + st.va.toFixed(3) + ' ＝ <strong>' + st.sd.toFixed(3) + '</strong>';
+    // 分布図（±1SD を色分け）
+    const lo = st.mean - st.sd, hi = st.mean + st.sd;
+    const inside = vals.filter(v => v >= lo && v <= hi).length;
+    C.scatter($('myChart'), { W: 420, H: 220, points: vals.map(v => [v, 1]), r: 6,
+      xMin: Math.min(...vals) - st.sd, xMax: Math.max(...vals) + st.sd, yMin: 0, yMax: 2,
+      colors: vals.map(v => (v >= lo && v <= hi) ? 'rgba(31,122,61,.75)' : 'rgba(179,38,30,.75)'),
+      xLabel: '緑＝平均±標準偏差の中', margin: { t: 14, r: 18, b: 40, l: 28 } });
+    drawSquaresFor(vals, st, $('mySquares'));
+    n.hidden = false; n.className = 'note info';
+    n.innerHTML = '列「<strong>' + (gridHeader[j] || '') + '</strong>」の ' + st.n + ' 個。平均 ' + st.mean.toFixed(2) +
+      '、標準偏差 <strong>' + st.sd.toFixed(2) + '</strong>。平均±標準偏差（' + lo.toFixed(2) + '〜' + hi.toFixed(2) +
+      '）の範囲に <strong>' + inside + ' 個（' + (inside / st.n * 100).toFixed(0) + '％）</strong>が入っています。' +
+      (st.sd === 0 ? 'すべて同じ値なので標準偏差は0です。' : '');
+    $('myTools').innerHTML = '';
+    $('myTools').appendChild(T.saveButton(() => $('myChart').querySelector('svg'), '分布'));
+    const sh = document.createElement('button');
+    sh.className = 'btn sm ghost'; sh.textContent = 'このデータのURLを作る';
+    sh.addEventListener('click', () => T.share({ d: grid.getRaw(), h: grid.getHeader(), j: j }, sh));
+    $('myTools').appendChild(sh);
+    const pr = document.createElement('button');
+    pr.className = 'btn sm ghost'; pr.textContent = '印刷する';
+    pr.addEventListener('click', T.printPage);
+    $('myTools').appendChild(pr);
+  }
+
+  /** 任意のデータで偏差の2乗を正方形として描く */
+  function drawSquaresFor(v, st, box) {
+    box.innerHTML = '';
+    const devs = v.map(x => x - st.mean);
+    const show = devs.slice(0, 12);
+    const maxAbs = Math.max(...show.map(Math.abs), st.sd, 1e-6);
+    const scale = 56 / maxAbs;
+    const cw = 46, W = show.length * cw + 90, H = 150;
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', '偏差の2乗を表す正方形');
+    const baseY = H - 24;
+    show.forEach((d, i) => {
+      const s = Math.abs(d) * scale, x = 8 + i * cw;
+      svg.appendChild(el('rect', { x, y: baseY - s, width: Math.max(1, s), height: Math.max(1, s),
+        fill: d >= 0 ? 'rgba(18,58,107,.16)' : 'rgba(179,38,30,.16)',
+        stroke: d >= 0 ? '#123a6b' : '#b3261e', 'stroke-width': 1.1 }));
+      svg.appendChild(el('text', { x: x + s / 2, y: baseY + 13, 'text-anchor': 'middle', 'font-size': 9,
+        fill: '#4a4f57', 'font-family': 'monospace' }, (d >= 0 ? '+' : '') + d.toFixed(1)));
+    });
+    const ss = st.sd * scale, xs = 8 + show.length * cw + 14;
+    svg.appendChild(el('rect', { x: xs, y: baseY - ss, width: Math.max(1, ss), height: Math.max(1, ss),
+      fill: 'rgba(138,90,0,.10)', stroke: '#8a5a00', 'stroke-width': 3 }));
+    svg.appendChild(el('text', { x: xs + ss / 2, y: baseY + 13, 'text-anchor': 'middle', 'font-size': 9,
+      fill: '#8a5a00', 'font-family': 'monospace', 'font-weight': 700 }, '平均'));
+    svg.setAttribute('viewBox', '0 0 ' + (xs + Math.max(50, ss) + 16) + ' ' + H);
+    box.appendChild(svg);
+    if (devs.length > 12) {
+      const p = document.createElement('p');
+      p.className = 'why'; p.style.marginTop = '6px';
+      p.textContent = '（最初の12個のみ表示しています）';
+      box.appendChild(p);
+    }
+  }
+
+  /* ---------- STEP6 クイズ ---------- */
   const QUIZ = [
     { t: 'データ 2, 4, 6, 8, 10 の分散はいくらか。', choices: ['8', '6', '10', '2.83'], a: '8',
       why: '平均は6。偏差は −4,−2,0,2,4。2乗して 16,4,0,4,16 → 合計40 → 40÷5＝8。標準偏差は√8≒2.83です。' },
@@ -248,9 +422,24 @@
     $('addDot').addEventListener('click', () => { if (vals.length < 9) { vals.push(50); drawLine(); } });
     $('delDot').addEventListener('click', () => { if (vals.length > 2) { vals.pop(); drawLine(); } });
     $('sdRange').addEventListener('input', drawSd);
+    ['myScore', 'avgScore', 'sdScore'].forEach(i => $(i).addEventListener('input', drawHensa));
     $('qNext').addEventListener('click', () => { qi++; renderQ(); });
     $('qReset').addEventListener('click', startQuiz);
-    drawLine(); startQuiz();
+    $('colSel').addEventListener('change', calcMine);
+    $('calcMine').addEventListener('click', calcMine);
+
+    const shared = T.readShared();
+    const initData = (shared && shared.d) ? shared.d :
+      [['1番','62'],['2番','58'],['3番','71'],['4番','65'],['5番','80'],['6番','55'],
+       ['7番','68'],['8番','74'],['9番','60'],['10番','67']];
+    const initHeader = (shared && shared.h) ? shared.h : ['生徒', 'テストの点数'];
+    grid = window.DataInput.create($('dataInput'), {
+      header: initHeader, data: initData, minRows: 3, onChange: refreshCols
+    });
+    window.Terms.glossary($('glossBox'), ['偏差', '分散', '標準偏差', '平均値', '代表値', '外れ値', '間隔尺度']);
+    drawLine(); startQuiz(); drawAB(); drawHensa();
+    refreshCols(grid.getData(), grid.getHeader());
+    window.Terms.attach();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
