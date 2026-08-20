@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>分散と標準偏差｜情報Ⅰ共通テスト対策問題集</title>
+<meta name="description" content="分散は「平均からのずれを2乗して平均したもの」。その2乗を正方形の面積として描くと、式の意味がそのまま目に見えます。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 fill=%22%2315181c%22/%3E%3Ctext x=%2216%22 y=%2222%22 font-size=%2218%22 font-family=%22monospace%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E01%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="inner">
+    <span class="eyebrow">第 1 章　データの活用　1-8</span>
+    <h1>分散と標準偏差（pp.29-30）</h1>
+    <p class="lead">分散は「平均からのずれを2乗して平均したもの」。その2乗を正方形の面積として描くと、式の意味がそのまま目に見えます。</p>
+    <p class="credit">Created by Dit-Lab.(Daiki ITO)　/　Supported by Tomoaki ATSUMI</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="step" id="step1">
+    <h2><span class="no">STEP 1</span>平均が同じでも「ちらばり」はちがう</h2>
+    <p class="desc">2つのクラスのテストの点数です。<strong>平均点はまったく同じ</strong>なのに、印象はまるでちがいます。</p>
+    <div class="grpwrap">
+      <div class="panel"><h3>A組（点数がまとまっている）</h3><div id="grpA"></div>
+        <div class="metrics"><div class="metric"><div class="k">平均</div><div class="v" id="aMean">—</div></div>
+        <div class="metric"><div class="k">分散</div><div class="v" id="aVar">—</div></div>
+        <div class="metric"><div class="k">標準偏差</div><div class="v" id="aSd">—</div></div></div></div>
+      <div class="panel"><h3>B組（点数が散らばっている）</h3><div id="grpB"></div>
+        <div class="metrics"><div class="metric"><div class="k">平均</div><div class="v" id="bMean">—</div></div>
+        <div class="metric"><div class="k">分散</div><div class="v" id="bVar">—</div></div>
+        <div class="metric"><div class="k">標準偏差</div><div class="v" id="bSd">—</div></div></div></div>
+    </div>
+    <div class="note info" style="margin-top:14px">
+      平均だけでは「どんなクラスか」はわかりません。<strong>ちらばりの大きさを数字にしたもの</strong>が分散と標準偏差です。
+    </div>
+  </section>
+
+  <section class="step" id="step2">
+    <h2><span class="no">STEP 2</span>ずれを2乗して、正方形にする</h2>
+    <p class="desc">点を<strong>つかんで左右に動かす</strong>と、平均線からのずれ（偏差）と、それを1辺とする正方形が変わります。<strong>正方形の面積の平均が分散</strong>です。</p>
+
+    <div class="panel">
+      <div id="lineBox"></div>
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn sm" data-set="tight">まとまった配置</button>
+        <button class="btn sm" data-set="spread">散らばった配置</button>
+        <button class="btn sm" data-set="same">全部同じ値</button>
+        <button class="btn sm" data-set="one">1つだけ離れる</button>
+        <button class="btn sm ghost" id="addDot">点を増やす</button>
+        <button class="btn sm ghost" id="delDot">点を減らす</button>
+      </div>
+    </div>
+
+    <div class="grid c2" style="margin-top:16px">
+      <div class="panel">
+        <h3>偏差を1辺とする正方形</h3>
+        <div id="sqBox"></div>
+        <p class="why" style="margin-top:8px">灰色の正方形＝各データの偏差の2乗。<span style="color:#8a5a00;font-weight:700">太い枠</span>＝それらの<strong>平均の面積</strong>、つまり<strong>分散</strong>。その一辺が<strong>標準偏差</strong>です。</p>
+      </div>
+      <div class="panel">
+        <h3>いまの値</h3>
+        <div class="metrics">
+          <div class="metric"><div class="k">データの個数</div><div class="v" id="vN">—</div></div>
+          <div class="metric"><div class="k">平均値</div><div class="v" id="vMean">—</div></div>
+        </div>
+        <div class="metrics" style="margin-top:2px">
+          <div class="metric"><div class="k">分散</div><div class="v" id="vVar">—</div><div class="s">＝正方形の平均面積</div></div>
+          <div class="metric"><div class="k">標準偏差</div><div class="v" id="vSd">—</div><div class="s">＝その一辺</div></div>
+        </div>
+        <div class="note" id="vNote" style="margin-top:14px"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="step" id="step3">
+    <h2><span class="no">STEP 3</span>手で計算する順番</h2>
+    <p class="desc">共通テストでは、この表を頭の中で作れるかが問われます。STEP 2 で動かした値がそのまま入っています。</p>
+    <div class="tbl-scroll">
+      <table class="tbl" id="devTable">
+        <thead><tr><th>#</th><th>値 x</th><th>偏差 x−x̄</th><th>偏差の2乗 (x−x̄)²</th></tr></thead>
+        <tbody></tbody><tfoot></tfoot>
+      </table>
+    </div>
+    <div class="note info eqline" id="eqNote" style="margin-top:14px"></div>
+    <p class="why" style="margin-top:10px">
+      <strong>偏差をそのまま足すと必ず 0 になります。</strong>だから2乗してから平均するのです。
+      2乗すると単位も2乗（点²）になるので、最後に平方根をとって単位を元に戻したものが標準偏差です。
+    </p>
+  </section>
+
+  <section class="step" id="step4">
+    <h2><span class="no">STEP 4</span>標準偏差の使いみち</h2>
+    <p class="desc">標準偏差は「平均からだいたいどれくらい離れているか」の目安です。平均 ± 標準偏差の範囲を見てみましょう。</p>
+    <div class="panel">
+      <label class="fld" for="sdRange">表示する範囲：平均 ± <span class="mono" id="sdRangeV">1</span> × 標準偏差</label>
+      <input type="range" id="sdRange" min="1" max="3" step="1" value="1">
+      <div id="sdChart" style="margin-top:10px"></div>
+      <div class="note" id="sdNote" style="margin-top:12px"></div>
+    </div>
+    <div class="note warn" style="margin-top:14px">
+      同じ「70点」でも、標準偏差が 5 のテストと 20 のテストではめずらしさがちがいます。
+      <strong>平均との差が標準偏差の何個分か</strong>で考えるのが基本です。
+    </div>
+  </section>
+
+  <section class="step" id="step5">
+    <h2><span class="no">STEP 5</span>確認クイズ</h2>
+    <div class="panel">
+      <div class="qhead">
+        <span class="badge" id="qProgress">1 / 1</span>
+        <span class="badge">正解 <span class="score" id="qScore">0</span></span>
+      </div>
+      <div class="card-q"><div class="q-scene" id="qText"></div></div>
+      <div class="choice4" id="qChoices"></div>
+      <div class="note" id="qFb" hidden style="margin-top:12px"></div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn primary" id="qNext" disabled>次の問題</button>
+        <button class="btn ghost" id="qReset">最初から</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="step">
+    <h2><span class="no">まとめ</span>おさえる式と性質</h2>
+    <ul style="margin:0;padding-left:1.2em;color:var(--ink-2);font-size:.92rem;line-height:2.05">
+      <li>偏差＝<span class="mono">各データ − 平均値</span>。偏差の合計は<strong>必ず 0</strong>。</li>
+      <li>分散＝<span class="mono">偏差の2乗の平均</span>。単位は元の単位の2乗。</li>
+      <li>標準偏差＝<span class="mono">√分散</span>。単位が元に戻るので比べやすい。</li>
+      <li>全部同じ値なら分散も標準偏差も<strong>0</strong>。<strong>負にはなりません。</strong></li>
+      <li>すべての値に同じ数を足しても<strong>分散は変わりません</strong>（ちらばりは変わらないから）。</li>
+      <li>すべての値を2倍すると、標準偏差は2倍、分散は<strong>4倍</strong>になります。</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer class="app-footer">
+  情報Ⅰ 共通テスト対策問題集（技術評論社）連動Webアプリ　/　Created by Dit-Lab.(Daiki ITO)　/　Supported by Tomoaki ATSUMI
+</footer>
+
+<script src="js/chart.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
