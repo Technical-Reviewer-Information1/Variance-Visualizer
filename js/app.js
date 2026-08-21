@@ -439,6 +439,37 @@
     window.Terms.glossary($('glossBox'), ['偏差', '分散', '標準偏差', '平均値', '代表値', '外れ値', '間隔尺度']);
     drawLine(); startQuiz(); drawAB(); drawHensa();
     refreshCols(grid.getData(), grid.getHeader());
+    if (document.getElementById('bookBox')) {
+      window.Quiz.choice('bookBox', 'bookNote', [
+        { k: 'ア', q: '表1（テストA：平均70点・分散100・標準偏差10点／テストB：平均70点・分散25・標準偏差5点）から判断できることは。',
+          ch: ['テストAの方が分散が大きいので、テストAの方が平均点に近い得点を取った生徒が多いといえる',
+               'テストBの方が分散は小さいので、テストBの方が得点の散らばりは大きい',
+               'テストAとテストBは平均点が同じなので、得点の散らばりの度合いも同じである',
+               'テストAとテストBは平均点が同じであるが、テストAの方が得点の散らばりは大きい'], a: 3,
+          why: '<strong>分散が大きい＝散らばりが大きい</strong>です。平均が同じでも散らばりは別物——これが STEP 1 で見た「平均が同じでもちらばりはちがう」ことです。' +
+               '⓪と①は大小が逆、②は平均だけで散らばりを判断しています。' },
+        { k: 'イ', q: '分散や標準偏差に関する記述として最も適当なものは。',
+          ch: ['分散が小さいとき、平均値も小さくなる傾向がある',
+               '分散が小さいとき、データが平均値のまわりに分布しているとは限らない',
+               '標準偏差が0に近いほど、そのデータには多くの外れ値を含んでいる',
+               '外れ値が多いほど、分散や標準偏差の値は大きくなりやすい'], a: 3,
+          why: '外れ値は平均から遠いので、<strong>2乗すると効き方が大きくなります</strong>。STEP 2 で1つの値を大きく動かすと、正方形の面積が一気に増えることで確かめられます。' +
+               '<br>⓪は平均と散らばりは無関係、①②は「分散が小さい＝平均のまわりに集まっている」の逆を述べています。' }
+      ], '本文の答えは【ア】③　【イ】③ です。');
+    }
+    if (document.getElementById('loadAB')) {
+      document.getElementById('loadAB').addEventListener('click', function () {
+        var n = document.getElementById('abNote');
+        n.className = 'note info';
+        n.innerHTML = '<strong>テストA</strong>（平均70・分散100・標準偏差10）は、たとえば ' +
+          '<span class="mono">60, 60, 70, 80, 80</span> のようなちらばり方。<br>' +
+          '<strong>テストB</strong>（平均70・分散25・標準偏差5）は、たとえば ' +
+          '<span class="mono">65, 65, 70, 75, 75</span>。<br>' +
+          'STEP 3 の入力欄にこの2組を入れて、<strong>平均は同じなのに分散が4倍ちがう</strong>ことを確かめてみましょう。' +
+          '標準偏差は √100 ＝ 10 と √25 ＝ 5 で、ちょうど2倍です。';
+      });
+    }
+
     window.Terms.attach();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
