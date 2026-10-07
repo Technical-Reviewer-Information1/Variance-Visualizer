@@ -472,5 +472,19 @@
 
     window.Terms.attach();
   }
+  if (window.Predict) Predict.make('pdV', {
+    q: 'それぞれの値から平均を引いた「ずれ（偏差）」を、<strong>そのまま全部足す</strong>と合計はいくつになるでしょう？',
+    type: 'num', unit: '', placeholder: '合計',
+    answer: function () { return 0; },
+    show: function () {
+      return 'どんなデータでも、ずれの合計は<strong>かならず0</strong>になります。' +
+             '平均より大きいずれ（＋）と小さいずれ（−）が、ちょうど打ち消し合うからです。';
+    },
+    why: '合計がいつも0では、ちらばりの大きさを比べられません。' +
+         'そこで<strong>2乗してプラスにそろえてから</strong>平均します。これが<strong>分散</strong>です。' +
+         'ただし2乗したままでは単位も2乗（cm→cm²）になってしまうので、' +
+         '最後に平方根をとって元の単位に戻したものが<strong>標準偏差</strong>です。'
+  });
+
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
